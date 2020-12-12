@@ -5,10 +5,8 @@ def valid(last_n, current):
 				return True
 	return False
 
-groups = []
 with open("data.txt") as data:
-	lines = data.read().splitlines()
-	lines = list(map(int, lines))
+	lines = list(map(int, data.read().splitlines()))
 
 preamble = 25
 lookback = 25
