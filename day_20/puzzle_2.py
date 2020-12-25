@@ -1,16 +1,4 @@
-from functools import reduce
-import operator
-from pprint import pprint
 import math
-from copy import deepcopy
-
-def print_tile(tile):
-	print(tile['tileNum'])
-	for line in tile['tile']:
-		print ("".join(line))
-
-def compare_edge(edge1, edge2):
-	return edge1 == edge2
 
 def get_edge(tile, edge):
 	edges = {"top": tile[0],
@@ -29,11 +17,6 @@ def rotate_tile(tile):
 
 def flip_tile(tile):
 	return [t[::-1] for t in tile]
-
-def compare_edges(tile1, tile2):
-	e1 = get_edges(tile1)
-	e2 = get_edges(tile2)
-	pass
 
 def get_permutations(tile):
 	functions_list = [lambda x: x,
@@ -64,10 +47,8 @@ def compare_tiles(tile1, tile2):
 	return match_count
 
 def get_matches(tile1, unused_tiles):
-	#print(unused_tiles)
 	matches = []
 	for tilenum2, tile2 in unused_tiles.items():
-		#print(tile2)
 		match = compare_tiles(tile1['tile'], tile2['tile'])
 		if match>0:
 			matches.append(tilenum2)
@@ -77,7 +58,6 @@ def single_edge_match(tile1edge, tile2):
 	for t2p in get_permutations(tile2):
 		e2 = get_edges(t2p)
 		for edge2 in e2:
-			#print("edges",tile1edge, edge2)
 			if tile1edge == edge2:
 				return t2p
 	return False
@@ -86,7 +66,6 @@ def opposite(input_dir):
 	dirs = {'left': 'right', 'right': 'left', 'top': 'bottom', 'bottom': 'top'}
 	return dirs[input_dir]
 	
-
 def specific_edge_match(tile1edge, tile2, tile2edgedir):
 	for t2p in get_permutations(tile2):
 		tile2edge = get_edge(t2p, tile2edgedir)
@@ -108,9 +87,7 @@ def get_oriented_match(tile1, tile1edgedir, unused_tiles, log=False):
 
 def unused(tiles, jigsaw):
 	tiles_in_jigsaw = [t[0] for line in jigsaw for t in line]
-	#print("tiles in jigsaw",[t for t in tiles_in_jigsaw if t in get_matches(tiles[1733], tiles)])
 	unused_tiles = {tile: tiles[tile] for tile in tiles if tile not in tiles_in_jigsaw}
-	#print([t for t in unused_tiles if t in get_matches(tiles[1733], tiles)])
 	return unused_tiles
 
 def parse_tiles(lines):
@@ -197,7 +174,6 @@ for tilenum1, tile1 in tiles.items():
 
 	if len(matches) == 2:
 		corners.append(tilenum1)
-print("Corners:",corners)
 
 corner1 = corners[0]
 
@@ -206,15 +182,13 @@ jigsaw = [[] for x in range(jigsaw_dim)] # This represents the joined-up tiles, 
 
 latestnum = corner1
 for orientation in get_permutations(tiles[corner1]['tile']):
-	#print(tiles[latestnum]['tile'])
-	#print("asdf")
-	#print(get_edge(tiles[latestnum]['tile'], "bottom"))
 	#Figure out which way to orient the first corner so that there's a match to the right and bottom
 	match_num, oriented = get_oriented_match(orientation, 'right', {tile: tiles[tile] for tile in tiles if tile != corner1})
 	match_num2, oriented2 = get_oriented_match(orientation, 'bottom', {tile: tiles[tile] for tile in tiles if tile != corner1})
 	if match_num and match_num2:
 		jigsaw[0].append((corner1, orientation))
 		break
+
 #Fill out the top row
 for ii in range(jigsaw_dim-1):
 	match_num, oriented = get_oriented_match(jigsaw[0][ii][1], 'right', unused(tiles, jigsaw))	
@@ -224,31 +198,13 @@ for ii in range(jigsaw_dim-1):
 for col in range(jigsaw_dim):
 	for row in range(1, jigsaw_dim):
 		match_num, oriented = get_oriented_match(jigsaw[row-1][col][1], 'bottom', unused(tiles, jigsaw))
-		if match_num:
-			jigsaw[row].append((match_num, oriented))
-		else:
-			print(jigsaw[row-1][col][0])
-			print(unused(tiles, jigsaw))
-			nt = deepcopy(tiles)
-			del nt[1733]
-			match_num, oriented = get_oriented_match(jigsaw[row-1][col][1], 'bottom', nt)
-
-			print("new match num",match_num)
-			for row in jigsaw:
-				print([t[0] for t in row])
-			pprint(jigsaw[2][1])
-			pprint(jigsaw[2][0])
-			#print(get_matches(tiles[1733], tiles))
-			exit(0)
+		jigsaw[row].append((match_num, oriented))
 	
 big_image = get_big_image(jigsaw)
 for orientation in get_permutations(big_image):
-	#print("new orientation\n\n")
-	#for row in orientation:
-	#	print(row)
 	monsters_count = get_monsters(orientation)
 	if monsters_count > 0:
-		print(count_seas(big_image, monsters_count))
+		print("Answer:",count_seas(big_image, monsters_count))
 		break
 
-# Answer: 20913499394191
+# Answer: 2209
