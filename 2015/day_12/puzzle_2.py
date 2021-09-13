@@ -38,4 +38,4 @@ def sum_children(node):
 
 print(sum_children(j))
 
-# Answer: 111754
+# Answer: 65402
