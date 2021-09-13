@@ -55,4 +55,4 @@ while not password.check_valid():
 
 print(password.password())
 
-# Answer: cqjxxyzz
+# Answer: cqkaabcc
