@@ -3,7 +3,6 @@ import math
 with open("./data.txt") as data:
 	lines = data.read().split('\n\n')
 	instructionlines = lines[0].splitlines()
-	partlines = lines[1].splitlines()
 
 workflows = {}
 for il in instructionlines:
@@ -12,114 +11,80 @@ for il in instructionlines:
 	itxt = il.split(',')
 	workflows[iname] = itxt
 
-parts = []
-for pl in partlines:
-	part = {}
-	ptxt = pl[1:-1].split(',')
-	for p in ptxt:
-		k, v = p.split('=')
-		part[k] = v
-	parts.append(part)
-
-def apply_workflow(part):
-	active_workflow = 'in'
-	_ = 0
-	while True:
-		_+=1
-		if active_workflow == 'A':
-			return True
-		elif active_workflow == 'R':
-			return False
-		for instruction in workflows[active_workflow]:
-			if instruction == 'A':
-				return True
-			elif instruction == 'R':
-				return False
+def next_steps(outcome, workflow_id, ranges):
+	next_steps = []
+	if workflow_id in ['A', 'R']:
+		outcome = workflow_id
+		next_steps.append((outcome, None, ranges))
+	elif workflow_id is None:
+		next_steps.append((outcome, None, ranges))
+	else:
+		for instruction in workflows[workflow_id]:
+			if instruction in ['A', 'R']:
+				outcome = instruction
+				next_steps.append((outcome, None, ranges))
 			else:
 				if ':' in instruction:
-					a, b = instruction.split(':')[0], instruction.split(':')[1]
-					if '<' in a:
-						k, r = a.split('<')[0], a.split('<')[1]
-						if int(part[k]) < int(r):
-							active_workflow = b
-							break
-						else:
+					new_ranges = deepcopy(ranges)
+					conditional, next_workflow = instruction.split(':')[0], instruction.split(':')[1]
+					if '<' in conditional:
+						attribute, newmax = conditional.split('<')[0], conditional.split('<')[1]
+						if ranges[attribute][1] < int(newmax):
+							# whole range is included. send to next_workflow unchanged.
+							# subtract whole range from existing ranges for next instruction
+							next_steps.append((None, next_workflow, new_ranges))
+							ranges[attribute][0] = int(newmax)
 							continue
-					elif '>' in a:
-						k, r = a.split('>')[0], a.split('>')[1]
-						if int(part[k]) > int(r):
-							active_workflow = b
-							break
+						elif ranges[attribute][0] < int(newmax):
+							# partial range included. split off a new_ranges and send to next_workflow.
+							# subtract that sub-range from existing ranges, and send existing ranges to next instruction in this workflow
+							new_ranges[attribute][1] = int(newmax) - 1
+							next_steps.append((None, next_workflow, new_ranges))
+
+							ranges[attribute][0] = int(newmax)
+							continue
 						else:
+							# no range included. send existing ranges to next instruction in this workflow
+							continue
+					elif '>' in conditional:
+						attribute, newmin = conditional.split('>')[0], conditional.split('>')[1]
+						if ranges[attribute][0] > int(newmin):
+							# whole range is included. send to next_workflow unchanged.
+							# subtract whole range from existing ranges for next instruction
+							next_steps.append(None, next_workflow, new_ranges)
+							ranges[attribute][1] = int(newmin)
+							continue
+						elif ranges[attribute][1] > int(newmin):
+							# partial range included. split off a new_ranges and send to next_workflow.
+							# subtract that sub-range from existing ranges, and send existing ranges to next instruction in this workflow
+							new_ranges[attribute][0] = int(newmin) + 1
+							next_steps.append((None, next_workflow, new_ranges))
+							ranges[attribute][1] = int(newmin)
+							continue
+						else:
+							# no range included. send existing ranges to next instruction in this workflow
 							continue
 				else:
-					active_workflow = instruction
-	
-def total_rating(part):
-	rating = 0
-	for k, v in part.items():
-		rating += int(v)
-	return rating
+					next_workflow = instruction
+					next_steps.append((None, next_workflow, ranges))
+	return next_steps
 
-def empty_valid_range():
-	return {'x': [], 'm': [], 'a': [], 's': []}
-
-def process_instruction(instruction, valid_ranges):
-	print("pi", instruction, valid_ranges)
-	if instruction == 'A':
-		return valid_ranges
-	elif instruction == 'R':
-		return empty_valid_range()
-	else:
-		if ':' in instruction:
-			a, next_workflow = instruction.split(':')[0], instruction.split(':')[1]
-			if '<' in a:
-				attribute, criterion = a.split('<')[0], a.split('<')[1]
-				print("vra, a", valid_ranges, attribute)
-				for ii in range(len(valid_ranges[attribute])):
-					if int(criterion) in range(valid_ranges[attribute][ii][0], valid_ranges[attribute][ii][1]):
-						print("aiv", attribute, ii, valid_ranges[attribute])
-						apply_range = (valid_ranges[attribute][ii][0], int(criterion))
-						untouched_range = (int(criterion)+1, valid_ranges[attribute][ii][1])
-						valid_ranges[attribute].pop(ii)
-						new_valid_ranges = deepcopy(valid_ranges)
-						new_valid_ranges[attribute].append(apply_range)
-						print(apply_range, untouched_range)
-						new_valid_ranges = process_workflow(next_workflow, new_valid_ranges)
-						return new_valid_ranges
-			elif '>' in a:
-				attribute, criterion = a.split('>')[0], a.split('>')[1]
-				for ii in range(len(valid_ranges[attribute])):
-					if int(criterion) in range(valid_ranges[attribute][ii][0], valid_ranges[attribute][ii][1]):
-						untouched_range = (valid_ranges[attribute][ii][0], int(criterion))
-						apply_range = (int(criterion)+1, valid_ranges[attribute][ii][1])
-						valid_ranges[attribute].pop(ii)
-						new_valid_ranges = deepcopy(valid_ranges)
-						new_valid_ranges[attribute].append(apply_range)
-						print(apply_range, untouched_range)
-						new_valid_ranges = process_workflow(next_workflow, new_valid_ranges)
-						return new_valid_ranges
+ranges = {'x': [1,4000], 'm': [1,4000], 'a': [1,4000], 's': [1,4000], }
+workflow_id = 'in'
+queue = [(None, workflow_id, ranges)]
+complete = []
+while len(queue) > 0:
+	a = queue.pop()
+	outcome, workflow_id, ranges = a
+	x = next_steps(outcome, workflow_id, ranges)
+	for n in x:
+		if n[0] is None:
+			queue.append(n)
 		else:
-			next_workflow = instruction
-			return process_workflow(next_workflow, valid_ranges)
+			complete.append(n)
 
-def process_workflow(workflow_id, valid_ranges):
-	if workflow_id == 'A':
-		return valid_ranges
-	elif workflow_id == 'R':
-		return empty_valid_range()
-	print(workflow_id, valid_ranges)
-	input("next")
-	workflow = workflows[workflow_id]
-	for instruction in workflow:
-		valid_ranges = process_instruction(instruction, valid_ranges)
-	return valid_ranges
-
-def count_ratings(valid_ranges):
-	active_workflow = 'in'
-	valid_ranges = process_workflow(active_workflow, valid_ranges)
-	return math.prod([int(v) for k, v in valid_ranges.items()])
-
-combinations = count_ratings({'x': [(1,4000)], 'm': [(1,4000)], 'a': [(1,4000)], 's': [(1,4000)], })
-
-print(combinations)
+subtotals = []
+for outcome, _, ranges in complete:
+	if outcome == 'A':
+		subtotals.append(math.prod([max(ranges[k][1] - ranges[k][0] + 1,0) for k in ranges]))
+print(sum(subtotals))
