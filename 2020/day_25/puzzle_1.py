@@ -1,3 +1,6 @@
+with open("data.txt") as data:
+	lines = data.read().splitlines()
+
 def get_loop_size(target):
 	counter = 0
 	num = 1
@@ -7,8 +10,8 @@ def get_loop_size(target):
 		counter += 1
 	return counter
 
-dpk = 8458505
-cpk = 16050997
+dpk = int(lines[0])
+cpk = int(lines[1])
 
 card_loop_size = get_loop_size(cpk)
 
