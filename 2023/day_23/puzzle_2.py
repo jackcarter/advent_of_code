@@ -25,7 +25,6 @@ def advance_to_next_node(current, direction):
 	neighbors = get_valid_neighbors(current, direction)
 	edge_len = 1
 	while len(neighbors) == 1:
-		print("e",edge_len)
 		edge_len += 1
 		current, direction = next(iter(neighbors))
 		if grid[current[0]][current[1]] == invalid_arrow(direction):
