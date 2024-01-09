@@ -1,0 +1,77 @@
+import re
+import networkx as nx
+import matplotlib.pyplot as plt
+from collections import OrderedDict
+
+with open("data.txt") as data:
+	lines = data.read().splitlines()
+
+valves = {}
+for line in lines:
+	valve, flow, tunnels = re.findall(r'Valve ([A-Z][A-Z]) has flow rate=(-?\d+); tunnels? leads? to valves? (.*)', line)[0]
+	flow = int(flow)
+	tunnels = set(tunnels.split(', '))
+	valves[valve] = (flow, tunnels)
+print(valves)
+
+G = nx.Graph()
+for valve, (flow, tunnels) in valves.items():
+	for tunnel in tunnels:
+		G.add_node(tunnel, flow=flow)
+		G.add_edge(valve, tunnel)
+
+#path = ['AA', 'DD', 'open', 'CC', 'BB', 'open', 'AA', 'II', 'JJ', 'open', 'II', 'AA', 'DD', 'EE', 'FF', 'GG', 'HH', 'open', 'GG', 'FF', 'EE', 'open', 'DD', 'CC', 'open', ]
+
+def closed_nonzero_valves(open_valves):
+	return [v for v in valves if v not in open_valves and valves[v][0] != 0]
+
+def path_to_valve(current, target):
+	return nx.shortest_path(G, current, target)
+
+def flow_per_step(open_valves):
+	return sum(valves[v][0] for v in open_valves)
+
+max_steps = 30
+
+current = 'AA'
+open_valves = ()
+steps_taken = 0
+total_flow = 0
+
+state = (current, open_valves, steps_taken, total_flow)
+
+frontier = [state]
+visited = {(current, open_valves): total_flow}
+
+max_flow = 0
+
+while len(frontier) > 0:
+	#print(len(frontier), max_flow)
+	current, open_valves, steps_taken, total_flow = frontier.pop()
+	targets = closed_nonzero_valves(open_valves)
+	if all([len(path_to_valve(current, target)) + steps_taken > max_steps for target in targets]):
+		# no time to reach any of the closed valves
+		final_flow = total_flow + flow_per_step(open_valves)*(max_steps - steps_taken)
+		if final_flow > max_flow:
+			max_flow = final_flow
+			print(open_valves, steps_taken, final_flow)
+		continue
+
+	for target in targets:
+		path = path_to_valve(current, target)
+		new_node = target
+		new_steps_taken = steps_taken + len(path) - 1 # get to the valve
+		new_steps_taken += 1 # open the valve
+		new_total_flow = total_flow + flow_per_step(open_valves)*len(path)
+		new_open_valves = open_valves + (target,)
+		if new_steps_taken > max_steps:
+			continue
+		if (new_node, new_open_valves) not in visited:
+			frontier.append((new_node, new_open_valves, new_steps_taken, new_total_flow))
+			visited[new_node, new_open_valves] = new_total_flow
+		else:
+			if new_total_flow > visited[new_node, new_open_valves]:
+				frontier.append((new_node, new_open_valves, new_steps_taken, new_total_flow))
+				visited[new_node, new_open_valves] = new_total_flow
+
+print(max_flow)
