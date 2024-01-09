@@ -40,7 +40,7 @@ elephant_current = 'AA'
 
 @functools.lru_cache(maxsize=None)
 def solve(steps_remaining, valves_remaining, my_current, elephant_current):
-	
+	print("start", steps_remaining, sorted(valves_remaining), my_current, elephant_current)
 	steps_taken = 0
 	final_flows = [0]
 
@@ -79,7 +79,7 @@ def solve(steps_remaining, valves_remaining, my_current, elephant_current):
 		elephant_new_node = elephant_path[len_shortest_path - 1]
 
 		# decrement steps for the walking
-		new_steps_remaining -= len_shortest_path
+		new_steps_remaining -= len_shortest_path - 1
 		# open the valve and walk one more step (or open both valves)
 		new_steps_remaining -= 1 
 
@@ -93,14 +93,15 @@ def solve(steps_remaining, valves_remaining, my_current, elephant_current):
 			elephant_new_node = elephant_path[len_shortest_path]
 
 		# next, solve from this new position. Add result of solving to total flow and return
-		new_valves_remaining = tuple([v for v in valves_remaining if v not in newly_opened_valves])
+		new_valves_remaining = tuple(sorted([v for v in valves_remaining if v not in newly_opened_valves]))
 		if len(new_valves_remaining) == 0:
 			new_flow = 0
 		else:
 			new_flow = solve(new_steps_remaining, new_valves_remaining, my_new_node, elephant_new_node)
-		final_flows.append(flow_per_step(newly_opened_valves)*steps_remaining + new_flow)
+		#print(new_flow, new_steps_remaining)
+		final_flows.append(flow_per_step(newly_opened_valves)*new_steps_remaining + new_flow)
 
-	print(steps_remaining, valves_remaining, my_current, elephant_current, max(final_flows))
+	#print(steps_remaining, sorted(valves_remaining), my_current, elephant_current, max(final_flows))
 	return max(final_flows)
 
 #print(solve(26, tuple(set(nonzero_valves)-set(['BB','CC','DD'])), 'AA', 'AA'))
