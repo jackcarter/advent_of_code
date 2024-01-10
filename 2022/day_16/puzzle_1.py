@@ -16,7 +16,6 @@ for line in lines:
 	flow = int(flow)
 	tunnels = set(tunnels.split(', '))
 	valves[valve] = (flow, tunnels)
-print(valves)
 
 G = nx.Graph()
 for valve, (flow, tunnels) in valves.items():
@@ -65,7 +64,7 @@ while len(frontier) > 0:
 		final_flow = total_flow + flow_per_step(open_valves)*(max_steps - steps_taken)
 		if final_flow > max_flow:
 			max_flow = final_flow
-			print(open_valves, steps_taken, final_flow)
+			#print(open_valves, steps_taken, final_flow)
 		continue
 
 	for target in targets:
@@ -85,14 +84,6 @@ while len(frontier) > 0:
 			frontier.append((new_node, new_open_valves, new_steps_taken, new_total_flow))
 			visited[new_node, sorted_new_open_valves] = new_total_flow, new_steps_taken
 
-# ['DD', 'BB', 'JJ', 'HH', 'EE', 'CC']
-# print()
-# for v, t in visited.items():
-# 	if 'BBCCDDEEHHJJ' in ''.join(v[1]):
-# 		print(v, t)
-		
-print(len(visited))
-
 print(max_flow)
 
-print(time.perf_counter() - start_time) #0.8 seconds
+#print(time.perf_counter() - start_time) 
