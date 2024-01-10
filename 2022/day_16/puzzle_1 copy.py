@@ -3,6 +3,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 from collections import OrderedDict
 import time
+import functools
 
 start_time = time.perf_counter()
 
@@ -28,6 +29,7 @@ for valve, (flow, tunnels) in valves.items():
 def closed_nonzero_valves(open_valves):
 	return [v for v in valves if v not in open_valves and valves[v][0] != 0]
 
+@functools.lru_cache(maxsize=None)
 def path_to_valve(current, target):
 	return nx.shortest_path(G, current, target)
 

@@ -16,7 +16,7 @@ for line in lines:
 	flow = int(flow)
 	tunnels = set(tunnels.split(', '))
 	valves[valve] = (flow, tunnels)
-print(valves)
+#print(valves)
 
 G = nx.Graph()
 for valve, (flow, tunnels) in valves.items():
@@ -42,7 +42,7 @@ def new_wins(new_flow, new_steps_taken, new_node, sorted_new_open_valves, visite
 	expected_visited = visited_flow + flow_per_step(sorted_new_open_valves)*(max_steps - visited_steps_taken)
 	return expected_new > expected_visited
 
-max_steps = 30
+max_steps = 26
 
 current = 'AA'
 open_valves = ()
@@ -65,7 +65,7 @@ while len(frontier) > 0:
 		final_flow = total_flow + flow_per_step(open_valves)*(max_steps - steps_taken)
 		if final_flow > max_flow:
 			max_flow = final_flow
-			print(open_valves, steps_taken, final_flow)
+			#print(open_valves, steps_taken, final_flow)
 		continue
 
 	for target in targets:
@@ -75,24 +75,23 @@ while len(frontier) > 0:
 		new_steps_taken += 1 # open the valve
 		new_total_flow = total_flow + flow_per_step(open_valves)*len(path)
 		new_open_valves = open_valves + (target,)
+		new_final_flow = new_total_flow + flow_per_step(new_open_valves)*(max_steps - new_steps_taken)
 		sorted_new_open_valves = tuple(sorted(new_open_valves))
 		if new_steps_taken > max_steps:
 			continue
 		if (new_node, sorted_new_open_valves) not in visited:
 			frontier.append((new_node, new_open_valves, new_steps_taken, new_total_flow))
-			visited[new_node, sorted_new_open_valves] = new_total_flow, new_steps_taken
-		elif new_wins(new_total_flow, new_steps_taken, new_node, sorted_new_open_valves, visited): 
+			visited[new_node, sorted_new_open_valves] = new_final_flow, new_steps_taken
+		elif new_final_flow > visited[new_node, sorted_new_open_valves][0]:
 			frontier.append((new_node, new_open_valves, new_steps_taken, new_total_flow))
-			visited[new_node, sorted_new_open_valves] = new_total_flow, new_steps_taken
-
-# ['DD', 'BB', 'JJ', 'HH', 'EE', 'CC']
-# print()
-# for v, t in visited.items():
-# 	if 'BBCCDDEEHHJJ' in ''.join(v[1]):
-# 		print(v, t)
+			visited[new_node, sorted_new_open_valves] = new_final_flow, new_steps_taken
 		
-print(len(visited))
+#print(len(visited))
 
-print(max_flow)
+visited_sets = [(set(v[1]), t[0]) for v, t in visited.items()]
 
-print(time.perf_counter() - start_time) #0.8 seconds
+max_combined_flow = max([t+t2 for v, t in visited_sets for v2, t2 in visited_sets if len(v.intersection(v2)) == 0])
+
+print(max_combined_flow)
+
+print(time.perf_counter() - start_time) # 17 seconds

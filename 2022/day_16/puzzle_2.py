@@ -24,6 +24,7 @@ for valve, (flow, tunnels) in valves.items():
 		G.add_node(tunnel, flow=flow)
 		G.add_edge(valve, tunnel)
 
+@functools.lru_cache(maxsize=None)
 def path_to_valve(current, target):
 	if target is None:
 		return [current]*100
